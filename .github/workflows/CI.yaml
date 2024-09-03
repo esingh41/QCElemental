@@ -9,13 +9,11 @@ on:
       - 'v[0-9]*.[0-9]*.[0-9]*rc[0-9]*'
     branches:
       - master
-      - next2026
-      - verdocs
+      - next2024
   pull_request:
     branches:
       - master
-      - next2026
-      - verdocs
+      - next2024
   schedule:
     - cron: "9 16 * * 1"
 
