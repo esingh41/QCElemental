@@ -20,26 +20,25 @@ Changelog
 .. +++++
 
 
-.. _`sec:cl0302`:
-
-0.30.2 / 2026-02-14
+0.50.0 / 2025-MM-DD (Unreleased) (aka "next" aka "QCSchema v2 available")
 -------------------
 
-`Docs <https://MolSSI.github.io/QCElemental/v0.30.2/>`_
+Breaking Changes
+++++++++++++++++
+* The very old model names `ResultInput`, `Result`, `ResultProperties`, `Optimization` deprecated in 2019 are now only available through `qcelelemental.models.v1`
+
+New Features
+++++++++++++
+* Downstream code should ``from qcelemental.models.v1 import Molecule, AtomicResult`` etc. to assure medium-term availability of existing models.
 
 Enhancements
 ++++++++++++
-- (:pr:`386`) Set up documentation build to store versions of documentation for each tag plus dev.
-
-
-
-0.30.1 / 2026-02-10
--------------------
 
 Bug Fixes
 +++++++++
-- (:pr:`384`) Update nglview optional dep to accommodate setuptools 82.0 w/o pkg_resources.
-  Either use the new version of nglview or an older version of both nglview and setuptools.
+
+Misc.
++++++
 
 
 0.30.0 / 2026-01-07
