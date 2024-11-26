@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         pydantic-version: ["2"]
         # runs-on: [ubuntu-latest, windows-latest]
         runs-on: [ubuntu-22.04, windows-latest]  # until drop py37
@@ -39,16 +39,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Install poetry
-        run: pip install poetry
-      - name: Install repo with poetry (full deps)
-        if: matrix.python-version != '3.9'
-        run: poetry install --no-interaction --no-ansi --all-extras
-      - name: Install repo with poetry (min deps)
-        if: matrix.python-version == '3.9'
-        run: poetry install --no-interaction --no-ansi --extras test
+      - name: Install QCElemental (full deps)
+        if: matrix.python-version != '3.8' && matrix.python-version != '3.10'
+        run: pip install '.[test,viz,align,standard]'
+      - name: Install QCElemental (min deps)
+        if: matrix.python-version == '3.8' || matrix.python-version == '3.10'
+        run: pip install '.[test]'
       - name: Run tests
-        run: poetry run pytest -rws -v --cov=qcelemental --color=yes --cov-report=xml  #-k "not pubchem_multiout_g"
+        run: pytest -rws -v --cov=qcelemental --color=yes --cov-report=xml  #-k "not pubchem_multiout_g"
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3 # NEEDS UPDATE TO v3 https://github.com/codecov/codecov-action
       - name: QCSchema Examples Deploy
@@ -73,39 +71,13 @@ jobs:
           python-version: "3.10"
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v2
-      - name: Install poetry
-        run: pip install poetry
       - name: Install repo
-        run: poetry install --no-interaction --no-ansi
+        run: pip install '.[docs]'
       - name: Build Documentation
-        run: bash scripts/build_docs.sh
-      # Decide where to deploy: dev/ for master, <tag>/ for tags
-      - name: Compute docs deploy target
-        id: target
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo GITHUB_REF_TYPE ${GITHUB_REF_TYPE}
-          echo GITHUB_REF_NAME ${GITHUB_REF_NAME}
-          echo GITHUB_REF ${GITHUB_REF}
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            echo "target_folder=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "version_label=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-
-          elif [[ "${GITHUB_REF_NAME}" == "master" || "${GITHUB_REF_NAME}" == "verdocs" ]]; then
-            echo "target_folder=dev" >> "$GITHUB_OUTPUT"
-            echo "version_label=dev" >> "$GITHUB_OUTPUT"
-
-          else
-            echo "target_folder=" >> "$GITHUB_OUTPUT"
-            echo "version_label=" >> "$GITHUB_OUTPUT"
-          fi
-          echo GITHUB_OUTPUT ${GITHUB_OUTPUT}
-
-      - name: GitHub Pages Deploy (versioned, keep old)
-        uses: JamesIves/github-pages-deploy-action@v4
-        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/verdocs' )
+        run: sphinx-build docs/ build/docs
+      - name: GitHub Pages Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.1
+        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' )
         with:
           branch: gh-pages
           folder: build/docs/
