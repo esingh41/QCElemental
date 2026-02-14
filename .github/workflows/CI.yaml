@@ -9,14 +9,10 @@ on:
       - 'v[0-9]*.[0-9]*.[0-9]*rc[0-9]*'
     branches:
       - master
-      - next2024
-      - next2025
       - next2026
   pull_request:
     branches:
       - master
-      - next2024
-      - next2025
       - next2026
   schedule:
     - cron: "9 16 * * 1"
@@ -79,9 +75,38 @@ jobs:
         run: pip install '.[docs]'
       - name: Build Documentation
         run: sphinx-build docs/ build/docs
-      - name: GitHub Pages Deploy
+
+      # Decide where to deploy: dev/ for master, <tag>/ for tags
+      - name: Compute docs deploy target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo GITHUB_REF_TYPE ${GITHUB_REF_TYPE}
+          echo GITHUB_REF_NAME ${GITHUB_REF_NAME}
+          echo GITHUB_REF ${GITHUB_REF}
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "target_folder=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "version_label=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+          elif [[ "${GITHUB_REF_NAME}" == "master" || "${GITHUB_REF_NAME}" == "verdocs" ]]; then
+            echo "target_folder=dev" >> "$GITHUB_OUTPUT"
+            echo "version_label=dev" >> "$GITHUB_OUTPUT"
+
+          elif [[ "${GITHUB_REF_NAME}" == "next2026" ]]; then
+            echo "target_folder=next" >> "$GITHUB_OUTPUT"
+            echo "version_label=next" >> "$GITHUB_OUTPUT"
+
+          else
+            echo "target_folder=" >> "$GITHUB_OUTPUT"
+            echo "version_label=" >> "$GITHUB_OUTPUT"
+          fi
+          echo GITHUB_OUTPUT ${GITHUB_OUTPUT}
+
+      - name: GitHub Pages Deploy (versioned, keep old)
         uses: JamesIves/github-pages-deploy-action@v4
-        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' )
+        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/next2026' )
         with:
           branch: gh-pages
           folder: build/docs/
@@ -89,7 +114,7 @@ jobs:
           clean: false
 
       - name: Update versions.json
-        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/verdocs' )
+        if: github.event_name == 'push' && github.repository == 'MolSSI/QCElemental' && ( startsWith( github.ref, 'refs/tags/' ) || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/next2026' )
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -105,8 +130,8 @@ jobs:
             cat > versions.json <<'JSON'
           [
             {"label": "dev", "path": "dev/"},
-            {"label": "v0.50.0rc1", "path": "v0.50.0rc1/"},
-            {"label": "v0.30.1", "path": "v0.30.1/"}
+            {"label": "next", "path": "next/"},
+            {"label": "v0.30.2", "path": "v0.30.2/"}
           ]
           JSON
           fi
@@ -116,8 +141,8 @@ jobs:
           data = json.loads(p.read_text())
           pinned = [
               {"label": "dev", "path": "dev/"},
-              {"label": "v0.50.0rc1", "path": "v0.50.0rc1/"},
-              {"label": "v0.30.1", "path": "v0.30.1/"},
+              {"label": "next", "path": "next/"},
+              {"label": "v0.30.2", "path": "v0.30.2/"},
           ]
           lbl = os.environ.get("VERSION_LABEL", "")
           tgt = os.environ.get("TARGET_FOLDER", "")

@@ -16,6 +16,8 @@ import datetime
 import os
 import sys
 
+os.environ["SPHINX_BUILD"] = "1"
+
 sys.path.insert(0, os.path.abspath("../../"))
 import qcelemental
 
@@ -109,7 +111,6 @@ html_theme = "sphinx_rtd_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
 html_theme_options = {
     # keep these off unless you're actually on RTD
     "version_selector": False,
